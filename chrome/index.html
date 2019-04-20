@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>test</title>
+  <!--[if IE]>
+<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+
+<![endif]-->
+  <style>
+    article,
+    aside,
+    dialog,
+    figure,
+    footer,
+    header,
+    hgroup,
+    menu,
+    nav,
+    section {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="mmd_area"></div>
+
+  <script src="./three.js-master/three.js-master/build/three.min.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/libs/mmdparser.min.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/libs/ammo.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/loaders/TGALoader.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/loaders/MMDLoader.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/effects/OutlineEffect.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/animation/CCDIKSolver.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/animation/MMDPhysics.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/animation/MMDAnimationHelper.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/controls/OrbitControls.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/libs/stats.min.js"></script>
+  <script src="./three.js-master/three.js-master/examples/js/libs/dat.gui.min.js"></script>
+
+  <script type="text/javascript">
+    var container, stats;
+    var mesh, camera, scene, renderer, effect;
+    var helper, ikHelper, physicsHelper;
+    var clock = new THREE.Clock();
+    init();
+    animate();
+    function init() {
+      container = document.createElement('div');
+      //document.body.appendChild(container);
+      var mmd_area = document.getElementById("mmd_area");
+      mmd_area.appendChild(container);
+      // mmd_area.style.position = "absolute";
+      // mmd_area.style.bottom = "0%";
+      // mmd_area.style.right = "0%";
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+      camera.position.z = 30;
+      // scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xffffff);
+      // var gridHelper = new THREE.PolarGridHelper(30, 10);
+      // gridHelper.position.y = - 10;
+      // scene.add(gridHelper);
+      var ambient = new THREE.AmbientLight(0x666666);
+      scene.add(ambient);
+      var directionalLight = new THREE.DirectionalLight(0x887766);
+      directionalLight.position.set(- 1, 1, 1).normalize();
+      scene.add(directionalLight);
+      //
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      //renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(window.innerWidth / 3, window.innerHeight / 3);
+      container.appendChild(renderer.domElement);
+      effect = new THREE.OutlineEffect(renderer);
+      
+      // STATS
+      stats = new Stats();
+      //container.appendChild(stats.dom);
+
+      // model
+      function onProgress(xhr) {
+        if (xhr.lengthComputable) {
+          var percentComplete = xhr.loaded / xhr.total * 100;
+          console.log(Math.round(percentComplete, 2) + '% downloaded');
+        }
+      }
+      var modelFile = './KizunaAI_ver1.01/kizunaai/kizunaai.pmx';
+      var vmdFiles = ['./three.js-master/three.js-master/examples/models/mmd/vmds/wavefile_v2.vmd'];
+
+      helper = new THREE.MMDAnimationHelper({
+        afterglow: 2.0
+      });
+
+      var loader = new THREE.MMDLoader();
+
+      loader.loadWithAnimation(modelFile, vmdFiles, function (mmd) {
+        mesh = mmd.mesh;
+        mesh.position.y = - 10;
+        scene.add(mesh);
+        helper.add(mesh, {
+          animation: mmd.animation,
+          physics: true
+        });
+        ikHelper = helper.objects.get(mesh).ikSolver.createHelper();
+        ikHelper.visible = false;
+        scene.add(ikHelper);
+        physicsHelper = helper.objects.get(mesh).physics.createHelper();
+        physicsHelper.visible = false;
+        scene.add(physicsHelper);
+        //initGui();
+      }, onProgress, null);
+
+      var controls = new THREE.OrbitControls(camera, renderer.domElement);
+      //window.addEventListener('resize', onWindowResize, false);
+      var phongMaterials;
+      var originalMaterials;
+      function makePhongMaterials(materials) {
+        var array = [];
+        for (var i = 0, il = materials.length; i < il; i++) {
+          var m = new THREE.MeshPhongMaterial();
+          m.copy(materials[i]);
+          m.needsUpdate = true;
+          array.push(m);
+        }
+        phongMaterials = array;
+      }
+      
+      function initGui() {
+        var api = {
+          'animation': true,
+          'gradient mapping': true,
+          'ik': true,
+          'outline': true,
+          'physics': true,
+          'show IK bones': false,
+          'show rigid bodies': false
+        };
+        var gui = new dat.GUI();
+        gui.add(api, 'animation').onChange(function () {
+          helper.enable('animation', api['animation']);
+        });
+        gui.add(api, 'gradient mapping').onChange(function () {
+          if (originalMaterials === undefined) originalMaterials = mesh.material;
+          if (phongMaterials === undefined) makePhongMaterials(mesh.material);
+          if (api['gradient mapping']) {
+            mesh.material = originalMaterials;
+          } else {
+            mesh.material = phongMaterials;
+          }
+        });
+        gui.add(api, 'ik').onChange(function () {
+          helper.enable('ik', api['ik']);
+        });
+        gui.add(api, 'outline').onChange(function () {
+          effect.enabled = api['outline'];
+        });
+        gui.add(api, 'physics').onChange(function () {
+          helper.enable('physics', api['physics']);
+        });
+        gui.add(api, 'show IK bones').onChange(function () {
+          ikHelper.visible = api['show IK bones'];
+        });
+        gui.add(api, 'show rigid bodies').onChange(function () {
+          if (physicsHelper !== undefined) physicsHelper.visible = api['show rigid bodies'];
+        });
+      }
+    }
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      effect.setSize(window.innerWidth, window.innerHeight);
+    }
+    //
+    function animate() {
+      requestAnimationFrame(animate);
+      stats.begin();
+      render();
+      stats.end();
+    }
+    function render() {
+      helper.update(clock.getDelta());
+      effect.render(scene, camera);
+    }
+
+  </script>
+</body>
+
+</html>

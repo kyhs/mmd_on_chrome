@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+  "name": "mmd_mmd",
+  "version": "1.0",
+  "permissions": [
+    "file:///*/*"
+  ],
+  "description": "mmd is there",
+  "browser_action": {
+    "default_popup": "popup.html"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["js/jquery-2.2.0.min.js","js/script.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
