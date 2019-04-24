@@ -2,9 +2,6 @@
   "manifest_version": 2,
   "name": "mmd_mmd",
   "version": "1.0",
-  "permissions": [
-    "file:///*/*"
-  ],
   "description": "mmd is there",
   "browser_action": {
     "default_popup": "popup.html"
