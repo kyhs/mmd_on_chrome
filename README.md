@@ -23,10 +23,4 @@ Make MMD model stand on the browser as a Chrome extension.
 
 ### Client(Chrome Browser) side
 
-1. Prepare `jquery-x.x.x.min.js` and locate it at `chrome/js`/
-
-1. Write `var server_ip` in `chrome/js/script.js` as the IP address of the server which runs the Docker container your deployed as the above
-
-1. Import `chrome/` directory to the Chrome as an Extension
-
 ## Licence
