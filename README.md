@@ -18,7 +18,7 @@ Make MMD model stand on the browser as a Chrome extension.
     ```bash
     $ cd server
     $ docker build .
-    $ docker run -d -p 80:80 {CONTAINER ID}
+    $ docker run -d -p 80:80 {IMAGE ID}
     ```
 
 ### Client(Chrome Browser) side
